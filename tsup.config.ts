@@ -30,6 +30,9 @@ export default defineConfig([
     sourcemap: true,
     target: 'es2020',
     platform: 'browser',
+    outExtension() {
+      return { js: '.js' };
+    },
     footer: {
       // Expose BackDismiss directly on window for CDN usage
       js: 'if(typeof window!=="undefined"){window.BackDismiss=BackDismissLib.BackDismiss;}',

@@ -1,6 +1,6 @@
 {
   "name": "back-dismiss",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Make the mobile back button close your overlays instead of navigating away",
   "keywords": [
     "back-button",
