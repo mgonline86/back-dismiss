@@ -15,11 +15,15 @@
     "dismiss"
   ],
   "license": "MIT",
-  "author": "",
+  "author": "mgonline86",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git+https://github.com/mgonline86/back-dismiss.git"
   },
+  "bugs": {
+    "url": "https://github.com/mgonline86/back-dismiss/issues"
+  },
+  "homepage": "https://github.com/mgonline86/back-dismiss#readme",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
