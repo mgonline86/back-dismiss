@@ -222,6 +222,58 @@ useBackDismiss(
 
 Usage: `<AppModal v-model="showSettings">...</AppModal>`
 
+### Angular (Standalone Directive)
+
+For Angular, you can create a lightweight Standalone Directive that wraps the core vanilla library. Drop this file into your project:
+
+```typescript
+// back-dismiss.directive.ts
+import { Directive, Input, Output, EventEmitter, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
+import { BackDismiss } from 'back-dismiss';
+
+@Directive({
+  selector: '[backDismiss]',
+  standalone: true
+})
+export class BackDismissDirective implements OnChanges, OnDestroy {
+  @Input() backDismiss: boolean = false;
+  @Output() dismiss = new EventEmitter<void>();
+
+  private entry: any = null;
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['backDismiss']) {
+      if (changes['backDismiss'].currentValue) {
+        this.entry = BackDismiss.push(() => this.dismiss.emit());
+      } else if (this.entry) {
+        this.entry.dismiss();
+        this.entry = null;
+      }
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.entry) {
+      this.entry.dismiss();
+      this.entry = null;
+    }
+  }
+}
+```
+
+**Usage in your template:**
+
+```html
+<!-- Automatically closes when the back button is pressed -->
+<div *ngIf="isModalOpen" 
+     [backDismiss]="isModalOpen" 
+     (dismiss)="isModalOpen = false" 
+     class="my-modal">
+  <h2>Angular Modal</h2>
+  <button (click)="isModalOpen = false">Close</button>
+</div>
+```
+
 ## Best Practices (Keeping it DRY)
 
 You shouldn't have to copy-paste `useBackDismiss` into every single file that has a modal. Instead, use one of these two patterns to apply it globally:

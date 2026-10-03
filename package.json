@@ -14,7 +14,8 @@
     "overlay",
     "dismiss",
     "vue",
-    "react"
+    "react",
+    "angular"
   ],
   "license": "MIT",
   "author": "mgonline86",
