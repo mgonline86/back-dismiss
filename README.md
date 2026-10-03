@@ -5,6 +5,7 @@
 [![npm version](https://img.shields.io/npm/v/back-dismiss)](https://www.npmjs.com/package/back-dismiss)
 [![bundle size](https://img.shields.io/bundlephobia/minzip/back-dismiss)](https://bundlephobia.com/package/back-dismiss)
 [![license](https://img.shields.io/npm/l/back-dismiss)](./LICENSE)
+[![Live Demo](https://img.shields.io/badge/Live-Demo-2563eb?style=flat&logo=safari)](https://mgonline86.github.io/back-dismiss/)
 
 A tiny (~2KB), zero-dependency library that intercepts the mobile back button (and Escape key) to close modals, drawers, and side menus — instead of navigating away from your page.
 
