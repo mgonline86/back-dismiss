@@ -176,6 +176,52 @@ function InfoModal({ show, onHide }) {
 </script>
 ```
 
+### Vue 3
+
+```vue
+<script setup>
+import { ref } from 'vue';
+import { useBackDismiss } from 'back-dismiss/vue';
+
+const open = ref(false);
+useBackDismiss(open, () => { open.value = false; });
+</script>
+
+<template>
+  <button @click="open = true">Open Modal</button>
+  <div v-if="open" class="modal">
+    <h2>Hello!</h2>
+    <button @click="open = false">Close</button>
+  </div>
+</template>
+```
+
+### Vue 3 + v-model pattern
+
+```vue
+<!-- AppModal.vue — reusable wrapper -->
+<script setup>
+import { useBackDismiss } from 'back-dismiss/vue';
+
+const props = defineProps<{ modelValue: boolean }>();
+const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>();
+
+// Works with getter function for props
+useBackDismiss(
+  () => props.modelValue,
+  () => emit('update:modelValue', false),
+);
+</script>
+
+<template>
+  <div v-if="modelValue" class="modal">
+    <slot />
+  </div>
+</template>
+```
+
+Usage: `<AppModal v-model="showSettings">...</AppModal>`
+
 ## Best Practices (Keeping it DRY)
 
 You shouldn't have to copy-paste `useBackDismiss` into every single file that has a modal. Instead, use one of these two patterns to apply it globally:

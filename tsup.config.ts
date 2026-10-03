@@ -21,6 +21,16 @@ export default defineConfig([
     target: 'es2020',
     external: ['react'],
   },
+  // Vue sub-export — ESM + CJS
+  {
+    entry: { 'vue/index': 'src/vue/index.ts' },
+    format: ['esm', 'cjs'],
+    dts: true,
+    minify: true,
+    sourcemap: true,
+    target: 'es2020',
+    external: ['vue'],
+  },
   // UMD/IIFE for CDN — single global `BackDismiss`
   {
     entry: { 'back-dismiss.min': 'src/index.ts' },

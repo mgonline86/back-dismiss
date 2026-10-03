@@ -1,6 +1,6 @@
 {
   "name": "back-dismiss",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Make the mobile back button close your overlays instead of navigating away",
   "keywords": [
     "back-button",
@@ -12,7 +12,9 @@
     "popstate",
     "close-watcher",
     "overlay",
-    "dismiss"
+    "dismiss",
+    "vue",
+    "react"
   ],
   "license": "MIT",
   "author": "mgonline86",
@@ -48,6 +50,16 @@
         "types": "./dist/react/index.d.cts",
         "default": "./dist/react/index.cjs"
       }
+    },
+    "./vue": {
+      "import": {
+        "types": "./dist/vue/index.d.ts",
+        "default": "./dist/vue/index.js"
+      },
+      "require": {
+        "types": "./dist/vue/index.d.cts",
+        "default": "./dist/vue/index.cjs"
+      }
     }
   },
   "files": [
@@ -62,10 +74,14 @@
     "prepublishOnly": "npm run lint && npm run test && npm run build"
   },
   "peerDependencies": {
-    "react": ">=17.0.0"
+    "react": ">=17.0.0",
+    "vue": ">=3.0.0"
   },
   "peerDependenciesMeta": {
     "react": {
+      "optional": true
+    },
+    "vue": {
       "optional": true
     }
   },
@@ -77,6 +93,7 @@
     "react-dom": "^19.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.5.0",
-    "vitest": "^2.0.0"
+    "vitest": "^2.0.0",
+    "vue": "^3.5.0"
   }
 }
