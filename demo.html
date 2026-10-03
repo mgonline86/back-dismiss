@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>back-dismiss — Local Test</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      color: #1a1a1a;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    h1 { font-size: 1.4rem; margin-bottom: 4px; }
+    .subtitle { color: #666; font-size: 0.9rem; margin-bottom: 24px; }
+
+    .test-card {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .test-card h2 { font-size: 1rem; margin-bottom: 4px; }
+    .test-card p { font-size: 0.85rem; color: #666; margin-bottom: 12px; }
+
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      width: 100%;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button:active { background: #1d4ed8; }
+    button.secondary {
+      background: #e5e7eb;
+      color: #374151;
+    }
+    button.secondary:active { background: #d1d5db; }
+    button.danger {
+      background: #ef4444;
+    }
+
+    /* Status bar */
+    #status {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #1a1a1a;
+      color: #4ade80;
+      font-family: monospace;
+      font-size: 0.8rem;
+      padding: 8px 16px;
+      z-index: 9999;
+    }
+    #status span { color: #facc15; }
+
+    /* Overlay backdrop */
+    .overlay-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 100;
+      animation: fadeIn 0.2s ease;
+    }
+    .overlay-backdrop.active { display: block; }
+
+    /* Modal */
+    .modal {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      width: min(90vw, 360px);
+      z-index: 150;
+      display: none;
+      animation: slideUp 0.25s ease;
+    }
+    .modal.active { display: block; }
+    .modal h3 { margin-bottom: 8px; }
+    .modal p { color: #666; font-size: 0.9rem; margin-bottom: 16px; }
+
+    /* Side menu */
+    .side-menu {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: min(80vw, 300px);
+      background: white;
+      z-index: 101;
+      padding: 24px;
+      display: none;
+      animation: slideRight 0.25s ease;
+      box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+    }
+    .side-menu.active { display: block; }
+    .side-menu h3 { margin-bottom: 16px; }
+    .side-menu .menu-item {
+      padding: 14px 0;
+      border-bottom: 1px solid #eee;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+    .side-menu .menu-item:active { color: #2563eb; }
+
+    /* Bottom sheet */
+    .bottom-sheet {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: white;
+      border-radius: 16px 16px 0 0;
+      padding: 20px 24px 40px;
+      z-index: 101;
+      display: none;
+      animation: slideSheetUp 0.3s ease;
+    }
+    .bottom-sheet.active { display: block; }
+    .bottom-sheet .handle {
+      width: 40px;
+      height: 4px;
+      background: #d1d5db;
+      border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+    .bottom-sheet h3 { margin-bottom: 8px; }
+    .bottom-sheet p { color: #666; font-size: 0.9rem; margin-bottom: 16px; }
+
+    /* Confirm dialog (for nested test) */
+    .confirm-dialog {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      width: min(85vw, 320px);
+      z-index: 201;
+      display: none;
+      animation: slideUp 0.2s ease;
+    }
+    .confirm-dialog.active { display: block; }
+    .confirm-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      z-index: 200;
+    }
+    .confirm-backdrop.active { display: block; }
+
+    .btn-row { display: flex; gap: 8px; margin-top: 12px; }
+    .btn-row button { flex: 1; }
+
+    /* Log area */
+    #log {
+      margin-top: 12px;
+      margin-bottom: 60px;
+      background: #1a1a1a;
+      color: #e5e7eb;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-family: monospace;
+      font-size: 0.75rem;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    #log .log-entry { padding: 3px 0; border-bottom: 1px solid #333; }
+    #log .log-entry:last-child { border-bottom: none; }
+    .log-time { color: #666; }
+    .log-action { color: #4ade80; }
+    .log-close { color: #f87171; }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { transform: translate(-50%, -40%); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
+    @keyframes slideRight { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+    @keyframes slideSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+  <h1>🔙 back-dismiss</h1>
+  <p class="subtitle">Press Back (or Escape) to close overlays</p>
+
+  <!-- Test 1: Simple Modal -->
+  <div class="test-card">
+    <h2>1️⃣ Simple Modal</h2>
+    <p>Open, then press Back — modal should close, page stays.</p>
+    <button onclick="openModal()">Open Modal</button>
+  </div>
+
+  <!-- Test 2: Side Menu -->
+  <div class="test-card">
+    <h2>2️⃣ Side Menu</h2>
+    <p>Open, then press Back — menu should slide away.</p>
+    <button onclick="openSideMenu()">Open Side Menu</button>
+  </div>
+
+  <!-- Test 3: Bottom Sheet -->
+  <div class="test-card">
+    <h2>3️⃣ Bottom Sheet</h2>
+    <p>Open, then press Back — sheet should dismiss.</p>
+    <button onclick="openBottomSheet()">Open Bottom Sheet</button>
+  </div>
+
+  <!-- Test 4: Nested Overlays -->
+  <div class="test-card">
+    <h2>4️⃣ Nested Overlays (LIFO)</h2>
+    <p>Opens menu → modal → confirm. Each Back closes the topmost one.</p>
+    <button onclick="openNestedTest()">Start Nested Test</button>
+  </div>
+
+  <!-- Test 5: Rapid toggle -->
+  <div class="test-card">
+    <h2>5️⃣ Rapid Open/Close</h2>
+    <p>Tap rapidly. History stack should stay clean.</p>
+    <button onclick="rapidToggle()">Rapid Toggle (5×)</button>
+  </div>
+
+  <!-- Log -->
+  <div id="log"></div>
+
+  <!-- Overlays -->
+  <div class="overlay-backdrop" id="backdrop" onclick="closeTopOverlay()"></div>
+
+  <div class="modal" id="modal">
+    <h3>Modal</h3>
+    <p>This is a simple modal dialog. Press your device's <strong>Back button</strong> or <strong>Escape</strong> to close it.</p>
+    <button class="secondary" onclick="closeModal()">Close (X button)</button>
+  </div>
+
+  <div class="side-menu" id="sideMenu">
+    <h3>☰ Menu</h3>
+    <div class="menu-item" onclick="log('Tapped Home', 'action')">🏠 Home</div>
+    <div class="menu-item" onclick="log('Tapped Profile', 'action')">👤 Profile</div>
+    <div class="menu-item" onclick="log('Tapped Settings', 'action')">⚙️ Settings</div>
+    <div class="menu-item" onclick="openModalFromMenu()">📦 Open Modal (nested test)</div>
+    <div style="margin-top: 20px;">
+      <button class="secondary" onclick="closeSideMenu()">Close Menu</button>
+    </div>
+  </div>
+
+  <div class="bottom-sheet" id="bottomSheet">
+    <div class="handle"></div>
+    <h3>Share</h3>
+    <p>Choose how to share this page:</p>
+    <button class="secondary" onclick="log('Copy link clicked', 'action')">📋 Copy Link</button>
+    <div style="height:8px"></div>
+    <button class="secondary" onclick="log('Share via... clicked', 'action')">📤 Share via...</button>
+    <div style="height:8px"></div>
+    <button class="danger" onclick="closeBottomSheet()">Cancel</button>
+  </div>
+
+  <div class="confirm-backdrop" id="confirmBackdrop"></div>
+  <div class="confirm-dialog" id="confirmDialog">
+    <h3>Are you sure?</h3>
+    <p style="color:#666;font-size:0.9rem;">This action cannot be undone.</p>
+    <div class="btn-row">
+      <button class="secondary" onclick="closeConfirmDialog()">Cancel</button>
+      <button class="danger" onclick="closeConfirmDialog()">Delete</button>
+    </div>
+  </div>
+
+  <!-- Status bar -->
+  <div id="status">
+    Stack depth: <span id="depthDisplay">0</span> | Adapter: <span id="adapterDisplay">—</span>
+  </div>
+
+  <!-- Library inlined — no external files needed -->
+  <script>
+    "use strict";var BackDismissLib=(()=>{var l=Object.defineProperty;var y=Object.getOwnPropertyDescriptor;var D=Object.getOwnPropertyNames;var g=Object.prototype.hasOwnProperty;var k=(e,t)=>{for(var i in t)l(e,i,{get:t[i],enumerable:!0})},b=(e,t,i,r)=>{if(t&&typeof t=="object"||typeof t=="function")for(let a of D(t))!g.call(e,a)&&a!==i&&l(e,a,{get:()=>t[a],enumerable:!(r=y(t,a))||r.enumerable});return e};var E=e=>b(l({},"__esModule",{value:!0}),e);var O={};k(O,{BackDismiss:()=>w});var c=class{constructor(){this.watcher=null;this.active=!1}activate(t,i){if(!this.active){if(typeof globalThis>"u"||!("CloseWatcher"in globalThis))throw new Error("[back-dismiss] CloseWatcher API is not available in this browser.");this.watcher=new CloseWatcher,this.active=!0,this.watcher.addEventListener("close",()=>{this.active&&(this.active=!1,this.watcher=null,t())}),i&&this.watcher.addEventListener("cancel",r=>{i()===!1&&r.preventDefault()})}}deactivate(){this.active&&(this.active=!1,this.watcher?.destroy(),this.watcher=null)}destroy(){this.deactivate()}};function v(){return typeof globalThis<"u"&&"CloseWatcher"in globalThis}var p="__back_dismiss_depth",h=class{constructor(t){this.popstateHandler=null;this.isDeactivating=!1;this.active=!1;this.depth=t}activate(t,i){if(this.active||typeof window>"u")return;this.active=!0;let r=window.history.state??{};window.history.pushState({...r,[p]:this.depth},""),this.popstateHandler=a=>{if(this.isDeactivating||!this.active)return;if((window.history.state?.[p]??0)<this.depth){if(i){let n=i();if(n instanceof Promise){n.then(o=>{o===!1?this.rePush():(this.active=!1,t())});return}if(n===!1){this.rePush();return}}this.active=!1,t()}},window.addEventListener("popstate",this.popstateHandler)}deactivate(){if(!this.active||typeof window>"u")return;this.active=!1,this.isDeactivating=!0,this.popstateHandler&&(window.removeEventListener("popstate",this.popstateHandler),this.popstateHandler=null),(window.history.state?.[p]??0)===this.depth&&window.history.back(),Promise.resolve().then(()=>{setTimeout(()=>{this.isDeactivating=!1},0)})}destroy(){this.deactivate()}rePush(){let t=window.history.state??{};window.history.pushState({...t,[p]:this.depth},"")}};var f={adapter:"auto",preventAppExit:!1},s=[],x=0,u=!1;function A(e){let t=f.adapter??"auto";if(t==="close-watcher"||t==="auto"&&v())try{return new c}catch{if(t==="close-watcher")throw new Error("[back-dismiss] CloseWatcher adapter was explicitly requested but is not available.")}return new h(e)}function B(e){return typeof e=="function"?{onClose:e}:e}function P(e){let t=B(e),i=t.id??`bd-${++x}`,r=s.length+1,a=A(r),d={id:i,adapter:a,options:t};s.push(d);let n=()=>{let o=s.indexOf(d);o!==-1&&s.splice(o,1),u=!0,t.onClose(),u=!1};return a.activate(n,t.onCancel),{id:i,dismiss:()=>m(i)}}function m(e){if(u)return;let t;if(e){let i=s.findIndex(r=>r.id===e);i!==-1&&(t=s[i],s.splice(i,1))}else t=s.pop();t&&t.adapter.deactivate()}function C(){return s.length}function S(e){f={...f,...e}}function W(){for(;s.length>0;)s.pop().adapter.deactivate()}var w={push:P,pop:m,depth:C,configure:S,clear:W};return E(O);})();
+    if(typeof window!=="undefined"){window.BackDismiss=BackDismissLib.BackDismiss;}
+  </script>
+  <script>
+    // --- Logging ---
+    function log(message, type = 'action') {
+      const el = document.getElementById('log');
+      const now = new Date().toLocaleTimeString();
+      const cls = type === 'close' ? 'log-close' : 'log-action';
+      el.innerHTML = `<div class="log-entry"><span class="log-time">${now}</span> <span class="${cls}">${message}</span></div>` + el.innerHTML;
+      updateStatus();
+    }
+
+    function updateStatus() {
+      document.getElementById('depthDisplay').textContent = BackDismiss.depth();
+      // Detect which adapter is being used
+      const hasCloseWatcher = 'CloseWatcher' in window;
+      document.getElementById('adapterDisplay').textContent = hasCloseWatcher ? 'CloseWatcher' : 'History API';
+    }
+    updateStatus();
+
+    // --- Simple Modal ---
+    function openModal() {
+      document.getElementById('modal').classList.add('active');
+      document.getElementById('backdrop').classList.add('active');
+      BackDismiss.push(() => closeModal());
+      log('Opened modal', 'action');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('active');
+      document.getElementById('backdrop').classList.remove('active');
+      BackDismiss.pop();
+      log('Closed modal', 'close');
+    }
+
+    // --- Side Menu ---
+    function openSideMenu() {
+      document.getElementById('sideMenu').classList.add('active');
+      document.getElementById('backdrop').classList.add('active');
+      BackDismiss.push(() => closeSideMenu());
+      log('Opened side menu', 'action');
+    }
+
+    function closeSideMenu() {
+      document.getElementById('sideMenu').classList.remove('active');
+      // Only hide backdrop if no other overlay is using it
+      if (BackDismiss.depth() <= 1) {
+        document.getElementById('backdrop').classList.remove('active');
+      }
+      BackDismiss.pop();
+      log('Closed side menu', 'close');
+    }
+
+    // --- Bottom Sheet ---
+    function openBottomSheet() {
+      document.getElementById('bottomSheet').classList.add('active');
+      document.getElementById('backdrop').classList.add('active');
+      BackDismiss.push(() => closeBottomSheet());
+      log('Opened bottom sheet', 'action');
+    }
+
+    function closeBottomSheet() {
+      document.getElementById('bottomSheet').classList.remove('active');
+      document.getElementById('backdrop').classList.remove('active');
+      BackDismiss.pop();
+      log('Closed bottom sheet', 'close');
+    }
+
+    // --- Nested Test ---
+    function openNestedTest() {
+      openSideMenu();
+    }
+
+    function openModalFromMenu() {
+      document.getElementById('modal').classList.add('active');
+      BackDismiss.push(() => closeNestedModal());
+      log('Opened modal from menu (depth: ' + BackDismiss.depth() + ')', 'action');
+
+      // Auto-open confirm dialog after 500ms
+      setTimeout(() => {
+        document.getElementById('confirmDialog').classList.add('active');
+        document.getElementById('confirmBackdrop').classList.add('active');
+        BackDismiss.push(() => closeConfirmDialog());
+        log('Opened confirm dialog (depth: ' + BackDismiss.depth() + ')', 'action');
+      }, 500);
+    }
+
+    function closeNestedModal() {
+      document.getElementById('modal').classList.remove('active');
+      BackDismiss.pop();
+      log('Closed nested modal', 'close');
+    }
+
+    function closeConfirmDialog() {
+      document.getElementById('confirmDialog').classList.remove('active');
+      document.getElementById('confirmBackdrop').classList.remove('active');
+      BackDismiss.pop();
+      log('Closed confirm dialog', 'close');
+    }
+
+    // --- Close topmost overlay (backdrop click) ---
+    function closeTopOverlay() {
+      const modal = document.getElementById('modal');
+      const sideMenu = document.getElementById('sideMenu');
+      const bottomSheet = document.getElementById('bottomSheet');
+
+      if (modal.classList.contains('active')) closeModal();
+      else if (bottomSheet.classList.contains('active')) closeBottomSheet();
+      else if (sideMenu.classList.contains('active')) closeSideMenu();
+    }
+
+    // --- Rapid Toggle ---
+    function rapidToggle() {
+      let count = 0;
+      const interval = setInterval(() => {
+        if (count >= 5) {
+          clearInterval(interval);
+          log('Rapid toggle complete. Stack depth: ' + BackDismiss.depth(), 'action');
+          return;
+        }
+        openModal();
+        setTimeout(() => closeModal(), 100);
+        count++;
+      }, 250);
+      log('Starting rapid toggle test...', 'action');
+    }
+
+    log('back-dismiss loaded! Adapter: ' + ('CloseWatcher' in window ? 'CloseWatcher' : 'History API'), 'action');
+  </script>
+</body>
+</html>
