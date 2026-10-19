@@ -15,7 +15,8 @@
     "dismiss",
     "vue",
     "react",
-    "angular"
+    "angular",
+    "svelte"
   ],
   "license": "MIT",
   "author": "mgonline86",
@@ -60,6 +61,16 @@
       "require": {
         "types": "./dist/vue/index.d.cts",
         "default": "./dist/vue/index.cjs"
+      }
+    },
+    "./svelte": {
+      "import": {
+        "types": "./dist/svelte/index.d.ts",
+        "default": "./dist/svelte/index.js"
+      },
+      "require": {
+        "types": "./dist/svelte/index.d.cts",
+        "default": "./dist/svelte/index.cjs"
       }
     }
   },

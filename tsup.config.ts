@@ -31,6 +31,15 @@ export default defineConfig([
     target: 'es2020',
     external: ['vue'],
   },
+  // Svelte sub-export — ESM + CJS
+  {
+    entry: { 'svelte/index': 'src/svelte/index.ts' },
+    format: ['esm', 'cjs'],
+    dts: true,
+    minify: true,
+    sourcemap: true,
+    target: 'es2020',
+  },
   // UMD/IIFE for CDN — single global `BackDismiss`
   {
     entry: { 'back-dismiss.min': 'src/index.ts' },

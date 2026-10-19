@@ -30,7 +30,7 @@ Now the back button closes the overlay. On every device, every browser. ✅
 - 📱 **Mobile-first** — Built for Android back button, iOS gestures, and desktop Escape key
 - 🪆 **Nested overlays** — Automatic LIFO stack (sidebar → modal → dialog → back × 3)
 - 🛡️ **Framework-safe** — Preserves router state (works with Next.js, Nuxt, React Router, etc.)
-- 🔌 **Works everywhere** — npm, CDN, React hook, vanilla JS
+- 🔌 **Works everywhere** — React, Vue, Angular, Svelte, Vanilla JS, CDN
 - ♿ **SSR-safe** — No-op during server-side rendering
 
 ## Installation
@@ -47,9 +47,11 @@ npm install back-dismiss
 <script src="https://cdn.jsdelivr.net/npm/back-dismiss/dist/back-dismiss.min.js"></script>
 ```
 
+> 💡 **Want to try it right now?** [Open the live demo](https://mgonline86.github.io/back-dismiss/) on your phone.
+
 ## Quick Start
 
-### React (one-line integration)
+### React
 
 ```jsx
 import { useBackDismiss } from 'back-dismiss/react';
@@ -66,6 +68,96 @@ function MyModal({ open, onClose }) {
     </div>
   ) : null;
 }
+```
+
+### Vue 3
+
+```vue
+<script setup>
+import { ref } from 'vue';
+import { useBackDismiss } from 'back-dismiss/vue';
+
+const open = ref(false);
+useBackDismiss(open, () => { open.value = false; });
+</script>
+
+<template>
+  <button @click="open = true">Open Modal</button>
+  <div v-if="open" class="modal">
+    <h2>Hello!</h2>
+    <button @click="open = false">Close</button>
+  </div>
+</template>
+```
+
+### Angular (Standalone Directive)
+
+For Angular, create a lightweight Standalone Directive that wraps the core vanilla library. Drop this file into your project:
+
+```typescript
+// back-dismiss.directive.ts
+import { Directive, Input, Output, EventEmitter, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
+import { BackDismiss } from 'back-dismiss';
+
+@Directive({
+  selector: '[backDismiss]',
+  standalone: true
+})
+export class BackDismissDirective implements OnChanges, OnDestroy {
+  @Input() backDismiss: boolean = false;
+  @Output() dismiss = new EventEmitter<void>();
+
+  private entry: any = null;
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['backDismiss']) {
+      if (changes['backDismiss'].currentValue) {
+        this.entry = BackDismiss.push(() => this.dismiss.emit());
+      } else if (this.entry) {
+        this.entry.dismiss();
+        this.entry = null;
+      }
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.entry) {
+      this.entry.dismiss();
+      this.entry = null;
+    }
+  }
+}
+```
+
+**Usage in your template:**
+
+```html
+<!-- Automatically closes when the back button is pressed -->
+<div *ngIf="isModalOpen" 
+     [backDismiss]="isModalOpen" 
+     (dismiss)="isModalOpen = false" 
+     class="my-modal">
+  <h2>Angular Modal</h2>
+  <button (click)="isModalOpen = false">Close</button>
+</div>
+```
+
+### Svelte (Svelte 4 & 5)
+
+```svelte
+<script>
+  import { backDismiss } from 'back-dismiss/svelte';
+  let open = false;
+</script>
+
+<button on:click={() => open = true}>Open Modal</button>
+
+{#if open}
+  <div use:backDismiss={() => open = false} class="modal">
+    <h2>Hello!</h2>
+    <button on:click={() => open = false}>Close</button>
+  </div>
+{/if}
 ```
 
 ### Vanilla JavaScript
@@ -101,7 +193,43 @@ function closeModal() {
 </script>
 ```
 
-## Framework Integration
+### Native HTML `<dialog>`
+
+> [!NOTE]
+> While modern Chrome on Android (120+) connects `showModal()` to CloseWatcher natively, **iOS Safari (swipe-to-go-back gesture)**, **Firefox on Android**, and non-modal dialogs (`dialog.show()`) will navigate the user away from the page. `back-dismiss` provides seamless cross-browser back-button dismissal for `<dialog>`.
+
+```html
+<dialog id="myDialog">
+  <h2>Native Dialog</h2>
+  <p>Press mobile back or swipe to close without leaving the page.</p>
+  <button id="closeBtn">Close</button>
+</dialog>
+
+<script type="module">
+  import { BackDismiss } from 'back-dismiss';
+
+  const dialog = document.getElementById('myDialog');
+  let entry = null;
+
+  function openDialog() {
+    dialog.showModal();
+    // Intercept back navigation (essential for iOS Safari & non-Chromium)
+    entry = BackDismiss.push(() => dialog.close());
+  }
+
+  // Clean up if closed via close button, escape key, or form[method="dialog"]
+  dialog.addEventListener('close', () => {
+    if (entry) {
+      entry.dismiss();
+      entry = null;
+    }
+  });
+
+  document.getElementById('closeBtn').addEventListener('click', () => dialog.close());
+</script>
+```
+
+## UI Library Examples
 
 ### shadcn/ui (Sheet / Dialog / Drawer)
 
@@ -176,27 +304,9 @@ function InfoModal({ show, onHide }) {
 </script>
 ```
 
-### Vue 3
+## Advanced Patterns
 
-```vue
-<script setup>
-import { ref } from 'vue';
-import { useBackDismiss } from 'back-dismiss/vue';
-
-const open = ref(false);
-useBackDismiss(open, () => { open.value = false; });
-</script>
-
-<template>
-  <button @click="open = true">Open Modal</button>
-  <div v-if="open" class="modal">
-    <h2>Hello!</h2>
-    <button @click="open = false">Close</button>
-  </div>
-</template>
-```
-
-### Vue 3 + v-model pattern
+### Vue 3 + v-model Pattern
 
 ```vue
 <!-- AppModal.vue — reusable wrapper -->
@@ -222,63 +332,11 @@ useBackDismiss(
 
 Usage: `<AppModal v-model="showSettings">...</AppModal>`
 
-### Angular (Standalone Directive)
-
-For Angular, you can create a lightweight Standalone Directive that wraps the core vanilla library. Drop this file into your project:
-
-```typescript
-// back-dismiss.directive.ts
-import { Directive, Input, Output, EventEmitter, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
-import { BackDismiss } from 'back-dismiss';
-
-@Directive({
-  selector: '[backDismiss]',
-  standalone: true
-})
-export class BackDismissDirective implements OnChanges, OnDestroy {
-  @Input() backDismiss: boolean = false;
-  @Output() dismiss = new EventEmitter<void>();
-
-  private entry: any = null;
-
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['backDismiss']) {
-      if (changes['backDismiss'].currentValue) {
-        this.entry = BackDismiss.push(() => this.dismiss.emit());
-      } else if (this.entry) {
-        this.entry.dismiss();
-        this.entry = null;
-      }
-    }
-  }
-
-  ngOnDestroy() {
-    if (this.entry) {
-      this.entry.dismiss();
-      this.entry = null;
-    }
-  }
-}
-```
-
-**Usage in your template:**
-
-```html
-<!-- Automatically closes when the back button is pressed -->
-<div *ngIf="isModalOpen" 
-     [backDismiss]="isModalOpen" 
-     (dismiss)="isModalOpen = false" 
-     class="my-modal">
-  <h2>Angular Modal</h2>
-  <button (click)="isModalOpen = false">Close</button>
-</div>
-```
-
-## Best Practices (Keeping it DRY)
+### Keeping it DRY
 
 You shouldn't have to copy-paste `useBackDismiss` into every single file that has a modal. Instead, use one of these two patterns to apply it globally:
 
-### 1. The Reusable Wrapper Component (Recommended)
+#### 1. The Reusable Wrapper Component (Recommended)
 Create a wrapper around your UI library's dialog *once*, and use your wrapper throughout your app.
 
 ```jsx
@@ -298,7 +356,7 @@ export function AppDialog({ open, onOpenChange, children }) {
 }
 ```
 
-### 2. Global Modal Manager (State-driven)
+#### 2. Global Modal Manager (State-driven)
 If your app uses global state (Zustand, Context, Redux) to manage modals, put the hook inside your global provider.
 
 ```jsx
@@ -320,8 +378,6 @@ export function GlobalModalProvider() {
   );
 }
 ```
-
-## Advanced Usage
 
 ### Unsaved Changes Guard
 
@@ -412,11 +468,11 @@ BackDismiss.clear();
 | `clear()` | Remove all entries. |
 | `configure(config)` | Update global settings. |
 
-### `useBackDismiss(isOpen, onClose, options?)` (React Hook)
+### `useBackDismiss(isOpen, onClose, options?)` (React Hook / Vue Composable)
 
 | Parameter | Type | Description |
 |---|---|---|
-| `isOpen` | `boolean` | Whether the overlay is currently open. |
+| `isOpen` | `boolean` / `Ref<boolean>` / `() => boolean` | Whether the overlay is currently open. |
 | `onClose` | `() => void` | Callback to close the overlay. |
 | `options.onCancel` | `() => boolean` | Return `false` to prevent closing. |
 | `options.id` | `string` | Optional identifier for debugging. |
